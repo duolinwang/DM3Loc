@@ -93,34 +93,34 @@ def typeicalSampling(ids, k):
     
     return train_fold_ids,val_fold_ids,test_fold_ids
 
-def group_sample(label_id_Dict,datasetfolder):
+def group_sample(label_id_Dict,datasetfolder,foldnum=5):
     Train = OrderedDict()
     Test = OrderedDict()
     Val = OrderedDict()
-    for i in range(5):
+    for i in range(foldnum):
         Train.setdefault(i,list())
         Test.setdefault(i,list())
         Val.setdefault(i,list())
     
     for eachkey in label_id_Dict:
         label_ids = list(label_id_Dict[eachkey])
-        if len(label_ids)<5:
-            for i in range(5):
+        if len(label_ids)<foldnum:
+            for i in range(foldnum):
                 Train[i].extend(label_ids)
             
             continue
         
-        [train_fold_ids, val_fold_ids,test_fold_ids] = typeicalSampling(label_ids, 5)
-        for i in range(5):
+        [train_fold_ids, val_fold_ids,test_fold_ids] = typeicalSampling(label_ids, foldnum)
+        for i in range(foldnum):
             Train[i].extend(train_fold_ids[i])
             Val[i].extend(val_fold_ids[i])
             Test[i].extend(test_fold_ids[i])
             print('label:%s finished sampling! Train length: %s, Test length: %s, Val length:%s'%(eachkey, len(train_fold_ids[i]), len(test_fold_ids[i]),len(val_fold_ids[i])))
     
-    for i in range(5):
+    for i in range(foldnum):
         print('Train length: %s, Test length: %s, Val length: %s'%(len(Train[i]),len(Test[i]),len(Val[i])))
-        print(type(Train[i]))
-        print(Train[0][:5])
+        #print(type(Train[i]))
+        #print(Train[0][:foldnum])
         np.savetxt(datasetfolder+'/Train'+str(i)+'.txt', np.asarray(Train[i]),fmt="%s")
         np.savetxt(datasetfolder+'/Test'+str(i)+'.txt', np.asarray(Test[i]),fmt="%s")
         np.savetxt(datasetfolder+'/Val'+str(i)+'.txt', np.asarray(Val[i]),fmt="%s")
@@ -270,9 +270,7 @@ def run_model(lower_bound, upper_bound, max_len, dataset, **kwargs):
     max_len = kwargs['left']+kwargs['right']
     
     # model mode maybe overridden by other parameter settings
-    for i in range(5):
-        #if i<2:
-        #   continue
+    for i in range(foldnum):
         print(Xtrain[i].shape)
         print(Train_mask_label[i].shape)
         print('Evaluating KFolds {}/10'.format(i + 1))
@@ -390,6 +388,7 @@ if __name__ == "__main__":
     parser.add_argument("--sharp_beta", type=int, default=1,help="sharp_beta")
     parser.add_argument("--lr",type=float,default=0.001,help = 'lr')
     parser.add_argument("--nb_classes",type=int,default=6,help = 'nb_classes')
+    parser.add_argument('--foldnum', type=int, default=5, help='number of cross-validation folds') 
     
     args = parser.parse_args()
     OUTPATH = os.path.join(basedir,'Results/'+args.message + '/')
