@@ -42,14 +42,16 @@ python3 Multihead_train.py --normalizeatt --classweight --dataset [custom traini
 ```
 The training data should be in the FASTA format. The labels should be presented by onehot encoding and in the first place of the mRNA sequence description, seperated with other parts by a comma ',', as in the following example: 
 ```sh
->010000,ACCNUM:NM_001507,Gene_ID:2862,Gene_Name:MLNR
-ATGGGCAGCCCCTGGAACGGCAGCGACGGC.....................
+>010010,ACCNUM:NM_001012665,Gene_ID:51626,Gene_Name:DYNC2LI1
+GGCCTCACTCCCAGACTCCTTGCGGAGCTCGCCGCCTGATTCTAGG....
+...
+...
 ```
 Parameters --normalizeatt --classweight were required to train the model in the paper. For details of other parameters, use the -h or --help parameter.
 ##### Examples of commands used to train the models for 5-fold cross-validation:
  ```sh
 python3 Multihead_train.py --normalizeatt --classweight --dataset ./testdata/modified_multilabel_seq_nonredundent.fasta --epochs 500 --message cnn64_smooth_l1
 ```
-Note that the final model used in DM3Loc webserver was an ensemble model trained by 8-folds cross-validation data, to obtain that model, users should set the parameter --foldnum 8 and use the whole dataset "modified_multilabel_seq", which contains the redundant sequences, to train the model. 
+Note that the final model used in DM3Loc webserver was an ensemble model trained by 8-folds cross-validation data, to obtain that model, users should set the parameter --foldnum 8 and use the whole dataset "modified_multilabel_seq.fasta", which contains the redundant sequences, to train the model. 
 
 ### The DM3Loc webserver can be accessed at http://dm3loc.lin-group.cn/
