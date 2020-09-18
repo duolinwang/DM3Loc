@@ -238,9 +238,9 @@ def run_model(lower_bound, upper_bound, dataset, **kwargs):
             if avg_predicted_y[i,c]>defaultcutoff[c]:
                 label.append(classlist[c])
         
-        outfile.write("%0.3f"%(avg_predicted_y[i,c]))
-        if avg_predicted_y[i,c]>defaultcutoff[c]:
-                label.append(classlist[c])
+        outfile.write("%0.3f"%(avg_predicted_y[i,nb_classes-1]))
+        if avg_predicted_y[i,nb_classes-1]>defaultcutoff[nb_classes-1]:
+                label.append(classlist[nb_classes-1])
         
         if len(label)==0:
             label = ["None"]
