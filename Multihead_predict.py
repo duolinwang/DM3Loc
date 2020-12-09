@@ -230,7 +230,7 @@ def run_model(lower_bound, upper_bound, dataset, **kwargs):
     avg_predicted_y = avg_predicted_y/kwargs['foldnum']
     #print("shape of avg_predicted_y is "+str(avg_predicted_y.shape))
     outfile=open(OUTPATH+"/prediction_results.txt",'w')
-    outfile.write("ID\tNucleus,Exosome,Cytosol,Ribosome,Membrane,Endoplasmic reticulum,Predicted Subcellular Location (cutoffs:Nu=0.68,Ex=0.98,Cy=0.2,Ri=0.39,Me=0.24,En=0.22)\n")
+    outfile.write("ID\tNucleus,Exosome,Cytosol,Ribosome,Membrane,Endoplasmic reticulum\tPredicted Subcellular Location (cutoffs:Nu=0.68,Ex=0.98,Cy=0.2,Ri=0.39,Me=0.24,En=0.22)\n")
     #defaultcutoff=[0.66,0.98,0.55,0.5,0.32,0.24,0.21] #original
     #defaultcutoff=[0.62,0.84,0.2,0.53,0.39,0.23,0.22]
     defaultcutoff=[0.68,0.98,0.2,0.55,0.39,0.24,0.22]
