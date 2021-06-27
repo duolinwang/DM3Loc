@@ -30,7 +30,7 @@ can directly call Multihead_predict.py
 python3 Multihead_predict.py --dataset [custom mRNA data in FASTA format] --outputpath [custom specified output folder for the prediction results]
 ```
 For details of the parameters, use the -h or --help parameter.
-For example, to predict for Test_fold0.fasta in the testdsata folder and output the results to the folder ./Results/5foldresult/, run the following command:
+For example, to predict for test.fasta in the testdsata folder and output the results to the folder ./Results/, run the following command:
 ```sh
 python3 Multihead_predict.py --dataset "./testdata/test.fasta" --outputpath ./Results/
 ```
