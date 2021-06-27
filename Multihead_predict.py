@@ -41,7 +41,7 @@ seq_encoding_vectors = np.array(list(encoding_seq.values()))
 
 gene_ids = None
 batch_size = 100 #try 200 later! too slow!
-nb_classes = 6
+nb_classes = 7
 
 def batch(iterable1,iterable2, batch_size=1):
     l = len(iterable1)
@@ -141,11 +141,10 @@ def preprocess_data(left, right,dataset,padmod='center',pooling_size=3,evaluate=
         return X,mask_label,mask_label_pooling,geneids,genelength
 
 
-
 def run_model(lower_bound, upper_bound, dataset, **kwargs):
     '''load data into the playground'''
     
-    classlist = ["Nucleus","Exosome","Cytosol","Ribosome","Membrane","Endoplasmic reticulum"]
+    classlist = ["Nucleus","Exosome","Cytosol","Cytoplasm","Ribosome","Membrane","Endoplasmic reticulum"]
     import pickle
     max_len = kwargs['left']+kwargs['right']
     if kwargs['evaluate']:
@@ -155,10 +154,11 @@ def run_model(lower_bound, upper_bound, dataset, **kwargs):
         X, mask_label,mask_label_pooling,geneids,genelength = preprocess_data(kwargs['left'],kwargs['right'], dataset,kwargs['padmod'],kwargs['pooling_size'],False)
     
     avg_predicted_y=np.zeros([X.shape[0],nb_classes])
-    att_matrix1_all=np.zeros([kwargs['foldnum'],X.shape[0],kwargs['headnum'],int(max_len/kwargs['pooling_size'])])
-    att_matrix2_all=np.zeros([kwargs['foldnum'],X.shape[0],kwargs['headnum'],int(max_len/kwargs['pooling_size'])])
-    att_matrix3_all=np.zeros([kwargs['foldnum'],X.shape[0],kwargs['headnum'],int(max_len/kwargs['pooling_size'])])
-    #average_att_123=np.zeros([X.shape[0],int(max_len/kwargs['pooling_size'])])
+    if not kwargs['onlypredict']:
+        att_matrix1_all=np.zeros([kwargs['foldnum'],X.shape[0],kwargs['headnum'],int(max_len/kwargs['pooling_size'])],dtype='float32')
+        att_matrix2_all=np.zeros([kwargs['foldnum'],X.shape[0],kwargs['headnum'],int(max_len/kwargs['pooling_size'])],dtype='float32')
+        att_matrix3_all=np.zeros([kwargs['foldnum'],X.shape[0],kwargs['headnum'],int(max_len/kwargs['pooling_size'])],dtype='float32')
+        #average_att_123=np.zeros([X.shape[0],int(max_len/kwargs['pooling_size'])])
     
     i=0
     model = multihead_attention(max_len, nb_classes, OUTPATH, kfold_index=i)  # initialize here load weights after model initialization
@@ -209,18 +209,19 @@ def run_model(lower_bound, upper_bound, dataset, **kwargs):
             model.model.load_weights(kwargs['weights_dir']+str(i)+".h5")
             pred_y = model.model.predict([batch_data[0],batch_data[1].reshape(-1,batch_data[1].shape[1],1)])
             avg_predicted_y[index*batch_size:index*batch_size+len(batch_data[0])]+=pred_y
-            #add attention
-            att_matrix1,att_matrix2,att_matrix3 = model.get_attention_multiscale_batch(batch_data[0],batch_data[1])  #(sample,head,length)
-            att_matrix1_all[i,index*batch_size:index*batch_size+len(batch_data[0])]= att_matrix1
-            att_matrix2_all[i,index*batch_size:index*batch_size+len(batch_data[0])]= att_matrix2
-            att_matrix3_all[i,index*batch_size:index*batch_size+len(batch_data[0])]= att_matrix3
-            #group_att_avg1= np.average(att_normolization(att_matrix1,relu=True),axis=1) #(sample,length)
-            #group_att_avg2= np.average(att_normolization(att_matrix2,relu = True),axis=1)
-            #group_att_avg3= np.average(att_normolization(att_matrix3,relu = True),axis=1)
-            ##group_att_avg1= np.average(att_matrix1,axis=1) #(sample,length)
-            ##group_att_avg2= np.average(att_matrix2,axis=1)
-            ##group_att_avg3= np.average(att_matrix3,axis=1)
-            #average_att_123[index*batch_size:index*batch_size+len(batch_data[0])]+=np.max(np.concatenate([np.expand_dims(group_att_avg1,2),np.expand_dims(group_att_avg2,2),np.expand_dims(group_att_avg3,2)],axis=-1),axis=-1)
+            if not kwargs['onlypredict']:
+               #add attention
+               att_matrix1,att_matrix2,att_matrix3 = model.get_attention_multiscale_batch(batch_data[0],batch_data[1])  #(sample,head,length)
+               att_matrix1_all[i,index*batch_size:index*batch_size+len(batch_data[0])]= att_matrix1
+               att_matrix2_all[i,index*batch_size:index*batch_size+len(batch_data[0])]= att_matrix2
+               att_matrix3_all[i,index*batch_size:index*batch_size+len(batch_data[0])]= att_matrix3
+               #group_att_avg1= np.average(att_normolization(att_matrix1,relu=True),axis=1) #(sample,length)
+               #group_att_avg2= np.average(att_normolization(att_matrix2,relu = True),axis=1)
+               #group_att_avg3= np.average(att_normolization(att_matrix3,relu = True),axis=1)
+               ##group_att_avg1= np.average(att_matrix1,axis=1) #(sample,length)
+               ##group_att_avg2= np.average(att_matrix2,axis=1)
+               ##group_att_avg3= np.average(att_matrix3,axis=1)
+               #average_att_123[index*batch_size:index*batch_size+len(batch_data[0])]+=np.max(np.concatenate([np.expand_dims(group_att_avg1,2),np.expand_dims(group_att_avg2,2),np.expand_dims(group_att_avg3,2)],axis=-1),axis=-1)
     #(sample,length)
     ################
     K.clear_session()
@@ -229,12 +230,17 @@ def run_model(lower_bound, upper_bound, dataset, **kwargs):
     avg_predicted_y = avg_predicted_y/kwargs['foldnum']
     #print("shape of avg_predicted_y is "+str(avg_predicted_y.shape))
     outfile=open(OUTPATH+"/prediction_results.txt",'w')
-    outfile.write("ID\tNucleus,Exosome,Cytosol,Ribosome,Membrane,Endoplasmic reticulum,Predicted Subcellular Location (cutoffs:Nu=0.66,Ex=0.98,Cy=0.55,Ri=0.32,Me=0.24,En=0.21)\n")
-    defaultcutoff=[0.66,0.98,0.55,0.32,0.24,0.21]
+    outfile.write("ID\tNucleus,Exosome,Cytosol,Ribosome,Membrane,Endoplasmic reticulum\tPredicted Subcellular Location (cutoffs:Nu=0.68,Ex=0.98,Cy=0.2,Ri=0.39,Me=0.24,En=0.22)\n")
+    #defaultcutoff=[0.66,0.98,0.55,0.5,0.32,0.24,0.21] #original
+    #defaultcutoff=[0.62,0.84,0.2,0.53,0.39,0.23,0.22]
+    defaultcutoff=[0.68,0.98,0.2,0.55,0.39,0.24,0.22]
     for i in range(len(geneids)):
         outfile.write(geneids[i]+"\t")
         label = []
         for c in range(nb_classes-1):
+            if c == 3:
+               continue #skip cytoplasm
+            
             outfile.write("%0.3f"%(avg_predicted_y[i,c])+",")
             if avg_predicted_y[i,c]>defaultcutoff[c]:
                 label.append(classlist[c])
@@ -249,38 +255,45 @@ def run_model(lower_bound, upper_bound, dataset, **kwargs):
         outfile.write("\t"+",".join(label)+"\n")
     
     outfile.close()
-    #add attention
-    outfile=open(OUTPATH+"/attention_weights.txt",'w')
-    for i in range(len(geneids)):
-         outfile.write(geneids[i]+"\t")
-         extraLength = int(np.sum(mask_label[i])/kwargs['pooling_size'])
-         average_att_123=np.zeros(extraLength)
-         for fold in range(kwargs['foldnum']):
-            group_att_avg1= np.average(att_normolization(att_matrix1_all[fold][i,:,:extraLength],relu=True),axis=0) #(length)
-            group_att_avg2= np.average(att_normolization(att_matrix2_all[fold][i,:,:extraLength],relu = True),axis=0)
-            group_att_avg3= np.average(att_normolization(att_matrix3_all[fold][i,:,:extraLength],relu = True),axis=0)
-            #print("shape of group_att_avg1 is ")
-            #print(group_att_avg1.shape)
-            average_att_123+=np.max(np.concatenate([np.expand_dims(group_att_avg1,1),np.expand_dims(group_att_avg2,1),np.expand_dims(group_att_avg3,1)],axis=-1),axis=-1)
-         
-         average_att_123=average_att_123/kwargs['foldnum']
-         #print("length is "+str(len(convertattweight2inputAxis(average_att_123[i],mask_label[i],max_len,kwargs['pooling_size']))))
-         #print(str(np.sum(mask_label[i])))
-         #attweights = convertattweight2inputAxis(average_att_123[i][:extraLength],mask_label[i],max_len,kwargs['pooling_size'])
-         attweights = convertattweight2inputAxis(average_att_123[:extraLength],mask_label[i],max_len,kwargs['pooling_size'])
-         #if i<10:
-         #   print(genelength[i])
-         
-         if genelength[i]>max_len:
-            att_left = attweights[:kwargs['left']]
-            att_right = attweights[kwargs['left']:]
-            padlength = genelength[i]-max_len
-            attweights = np.concatenate([att_left,np.zeros(padlength),att_right])
-         
-         outfile.write(','.join([str(x) for x in attweights]))
-         outfile.write("\n")
+    if not kwargs['onlypredict']:
+        #add attention
+        outfile=open(OUTPATH+"/attention_weights.txt",'w')
+        for i in range(len(geneids)):
+             outfile.write(geneids[i]+"\t")
+             extraLength = int(np.sum(mask_label[i])/kwargs['pooling_size'])
+             average_att_123=np.zeros(extraLength)
+             for fold in range(kwargs['foldnum']):
+                group_att_avg1= np.average(att_normolization(att_matrix1_all[fold][i,:,:extraLength].reshape(-1,extraLength),method='zscore',relu=True),axis=0) #(length)
+                group_att_avg2= np.average(att_normolization(att_matrix2_all[fold][i,:,:extraLength].reshape(-1,extraLength),method='zscore',relu = True),axis=0)
+                group_att_avg3= np.average(att_normolization(att_matrix3_all[fold][i,:,:extraLength].reshape(-1,extraLength),method='zscore',relu = True),axis=0)
+                #print("fold "+str(fold)+" ")
+                #print(group_att_avg1[0:10])
+                #print("shape of group_att_avg1 is ")
+                #print(att_matrix1_all[fold][i,:,:extraLength].reshape(-1,extraLength).min())
+                #print(att_matrix1_all[fold][i,:,:extraLength].reshape(-1,extraLength).sum())
+                #print(group_att_avg1.shape)
+                average_att_123+=np.max(np.concatenate([np.expand_dims(group_att_avg1,1),np.expand_dims(group_att_avg2,1),np.expand_dims(group_att_avg3,1)],axis=-1),axis=-1)
+             
+             average_att_123=average_att_123/kwargs['foldnum']
+             #print("length is "+str(len(convertattweight2inputAxis(average_att_123[i],mask_label[i],max_len,kwargs['pooling_size']))))
+             #print(str(np.sum(mask_label[i])))
+             #attweights = convertattweight2inputAxis(average_att_123[i][:extraLength],mask_label[i],max_len,kwargs['pooling_size'])
+             attweights = convertattweight2inputAxis(average_att_123[:extraLength],mask_label[i],max_len,kwargs['pooling_size'])
+             #if i<10:
+             #   print(genelength[i])
+             
+             if genelength[i]>max_len:
+                att_left = attweights[:kwargs['left']]
+                att_right = attweights[kwargs['left']:]
+                padlength = genelength[i]-max_len
+                attweights = np.concatenate([att_left,np.zeros(padlength),att_right])
+             
+             attweightmin = attweights.min()
+             outfile.write(','.join([str(x-attweightmin) for x in attweights]))
+             outfile.write("\n")
+        
+        outfile.close()
     
-    outfile.close()
     ##############
     if kwargs['evaluate']:
          roc_auc = dict()
@@ -363,6 +376,7 @@ if __name__ == "__main__":
     parser.add_argument("--normalizeatt", action="store_true",help="normalizeatt")
     parser.add_argument("--attmod", type=str, default="smooth",help="attmod")
     parser.add_argument("--sharp_beta", type=int, default=1,help="sharp_beta")
+    parser.add_argument("--onlypredict", action="store_true",help="only predict no attention weight")
     
     args = parser.parse_args()
     args.normalizeatt = True
@@ -377,7 +391,5 @@ if __name__ == "__main__":
     websiteoutput = open(OUTPATH+"/prediction_predicted_num.txt",'w')
     websiteoutput.write("All:100\n")
     websiteoutput.close()
-
-
 
 #python3 Multihead_predict.py --dataset "./testdata/Test_fold0.fasta" --outputpath ./Results/5foldresult/

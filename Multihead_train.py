@@ -93,7 +93,7 @@ def typeicalSampling(ids, k):
     
     return train_fold_ids,val_fold_ids,test_fold_ids
 
-def group_sample(label_id_Dict,datasetfolder,foldnum=5):
+def group_sample(label_id_Dict,datasetfolder,foldnum=8):
     Train = OrderedDict()
     Test = OrderedDict()
     Val = OrderedDict()
@@ -121,9 +121,9 @@ def group_sample(label_id_Dict,datasetfolder,foldnum=5):
         print('Train length: %s, Test length: %s, Val length: %s'%(len(Train[i]),len(Test[i]),len(Val[i])))
         #print(type(Train[i]))
         #print(Train[0][:foldnum])
-        np.savetxt(datasetfolder+'/Train'+str(i)+'.txt', np.asarray(Train[i]),fmt="%s")
-        np.savetxt(datasetfolder+'/Test'+str(i)+'.txt', np.asarray(Test[i]),fmt="%s")
-        np.savetxt(datasetfolder+'/Val'+str(i)+'.txt', np.asarray(Val[i]),fmt="%s")
+        np.savetxt(datasetfolder+'/Train8'+str(i)+'.txt', np.asarray(Train[i]),fmt="%s")
+        np.savetxt(datasetfolder+'/Test8'+str(i)+'.txt', np.asarray(Test[i]),fmt="%s")
+        np.savetxt(datasetfolder+'/Val8'+str(i)+'.txt', np.asarray(Val[i]),fmt="%s")
     
     return Train, Test, Val
 
@@ -153,11 +153,11 @@ def preprocess_data(left, right,dataset,padmod='center',pooling_size=3):
     Test=OrderedDict()
     Val=OrderedDict()
     datasetfolder=os.path.dirname(dataset)
-    if os.path.exists(datasetfolder+'/Train'+str(0)+'.txt'):
-        for i in range(5):
-            Train[i] = np.loadtxt(datasetfolder+'/Train'+str(i)+'.txt',dtype='str')#HDF5Matrix(os.path.join('../mRNA_multi_data_keepnum_code/', 'datafold'+str(i)+'.h5'), 'Train')[:]
-            Test[i] = np.loadtxt(datasetfolder+'/Test'+str(i)+'.txt',dtype='str')#HDF5Matrix(os.path.join('../mRNA_multi_data_keepnum_code/', 'datafold'+str(i)+'.h5'), 'Test')[:]
-            Val[i] = np.loadtxt(datasetfolder+'/Val'+str(i)+'.txt',dtype='str')#HDF5Matrix(os.path.join('../mRNA_multi_data_keepnum_code/', 'datafold'+str(i)+'.h5'), 'Val')[:]
+    if os.path.exists(datasetfolder+'/Train8'+str(0)+'.txt'):
+        for i in range(8):
+            Train[i] = np.loadtxt(datasetfolder+'/Train8'+str(i)+'.txt',dtype='str')#HDF5Matrix(os.path.join('../mRNA_multi_data_keepnum_code/', 'datafold'+str(i)+'.h5'), 'Train')[:]
+            Test[i] = np.loadtxt(datasetfolder+'/Test8'+str(i)+'.txt',dtype='str')#HDF5Matrix(os.path.join('../mRNA_multi_data_keepnum_code/', 'datafold'+str(i)+'.h5'), 'Test')[:]
+            Val[i] = np.loadtxt(datasetfolder+'/Val8'+str(i)+'.txt',dtype='str')#HDF5Matrix(os.path.join('../mRNA_multi_data_keepnum_code/', 'datafold'+str(i)+'.h5'), 'Val')[:]
     else:
         [Train, Test,Val] = group_sample(label_id_Dict,datasetfolder)
     
@@ -172,7 +172,7 @@ def preprocess_data(left, right,dataset,padmod='center',pooling_size=3):
     Val_mask_label={}
     maxpoolingmax = int((left+right)/pooling_size)
     
-    for i in range(5):
+    for i in range(8):
         #if i <2:
         #   continue
         
@@ -270,7 +270,7 @@ def run_model(lower_bound, upper_bound, max_len, dataset, **kwargs):
     max_len = kwargs['left']+kwargs['right']
     
     # model mode maybe overridden by other parameter settings
-    for i in range(foldnum):
+    for i in range(1):#(kwargs['foldnum']):
         print(Xtrain[i].shape)
         print(Train_mask_label[i].shape)
         print('Evaluating KFolds {}/10'.format(i + 1))
@@ -311,8 +311,8 @@ def run_model(lower_bound, upper_bound, max_len, dataset, **kwargs):
                                                  lr = kwargs['lr']
                                                 )
         
-        if kwargs['nb_classes'] == 6:
-           class_weights={0:1,1:1,2:1,3:3,4:5,5:8}
+        if kwargs['nb_classes'] == 7:
+           class_weights={0:1,1:1,2:7,3:1,4:3,5:5,6:8}
         
         model.train(Xtrain[i], Ytrain[i],Train_mask_label[i], kwargs['batch_size'], kwargs['epochs'],Xval[i],Yval[i],Val_mask_label[i],loadFinal=kwargs['loadFinal'],classweight = kwargs['classweight'],class_weights=class_weights)
         model.evaluate(Xtest[i], Ytest[i],Test_mask_label[i])
@@ -387,8 +387,8 @@ if __name__ == "__main__":
     parser.add_argument("--attmod", type=str, default="smooth",help="attmod")
     parser.add_argument("--sharp_beta", type=int, default=1,help="sharp_beta")
     parser.add_argument("--lr",type=float,default=0.001,help = 'lr')
-    parser.add_argument("--nb_classes",type=int,default=6,help = 'nb_classes')
-    parser.add_argument('--foldnum', type=int, default=5, help='number of cross-validation folds') 
+    parser.add_argument("--nb_classes",type=int,default=7,help = 'nb_classes')
+    parser.add_argument('--foldnum', type=int, default=8, help='number of cross-validation folds') 
     
     args = parser.parse_args()
     OUTPATH = os.path.join(basedir,'Results/'+args.message + '/')
@@ -405,4 +405,9 @@ if __name__ == "__main__":
     run_model(**vars(args))
 
 
-#python3 Multihead_train.py --normalizeatt --classweight --dataset ./testdata/modified_mutlilabel_seq.fasta --epochs 500 --message cnn64_smooth_l1
+
+#use the remove data direct from fold
+#python3 Multihead_train.py --normalizeatt --classweight --dataset ../direct_8_fold_data/modified_multi_complete_to_cdhit.fasta --epochs 500 --message direct_8fold_model --weights_dir 'model_after_cdhit'
+
+
+#python3 Multihead_train.py --normalizeatt --classweight --dataset ../modified_multi_complete_to_cdhit.fasta --epochs 500 --message cnn64_smooth_l1

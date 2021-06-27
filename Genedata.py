@@ -1,7 +1,9 @@
 import csv
 import os
+#import warnings
 import numpy as np
 
+#warnings.filterwarnings("ignore")
 
 class Gene_data:
     train_test_split_ratio = 0.1
