@@ -1,11 +1,7 @@
 import csv
 import os
-import urllib
-import urllib.request as request
-import warnings
 import numpy as np
 
-warnings.filterwarnings("ignore")
 
 class Gene_data:
     train_test_split_ratio = 0.1
@@ -30,6 +26,17 @@ class Gene_data:
             for line in f:
                 if line[0] == '>':
                     if index!=0:
+                        seq=seq.upper()
+                        seq=seq.replace('U','T')
+                        seq=list(seq)
+                        #change all other characters into N
+                        for index in range(len(seq)):
+                            if seq[index] not in ['A','C','G','T']:
+                               test=1
+                               seq[index]='N'
+                        
+                        seq = ''.join(seq)
+                        
                         seq_length = len(seq)
                         line_left = seq[:int(seq_length*left/(right+left))]
                         line_right = seq[int(seq_length*left/(right+left)):]
@@ -41,9 +48,11 @@ class Gene_data:
                         
                         
                         gene = Gene_data(id,label)
-                        gene.seqleft = line_left.rstrip().upper()
-                        gene.seqright = line_right.rstrip().upper()
+                        gene.seqleft = line_left.rstrip()
+                        gene.seqright = line_right.rstrip()
                         gene.length = seq_length
+                        #if transcript_biotype != 'protein_coding':
+                        #    count += 1
                         genes.append(gene)
                     
                     id = line.strip()
@@ -52,10 +61,21 @@ class Gene_data:
                 else:
                     seq+=line.strip()
                 
+                #print(index)
                 index+=1
             
+            #last seq 
             seq=seq.upper()
             seq=seq.replace('U','T')
+            seq=list(seq)
+            #change all other characters into N
+            for index in range(len(seq)):
+                if seq[index] not in ['A','C','G','T']:
+                   test=1
+                   seq[index]='N'
+            
+            seq = ''.join(seq)
+            
             seq_length = len(seq)
             line_left = seq[:int(seq_length*left/(right+left))]
             line_right = seq[int(seq_length*left/(right+left)):]
@@ -66,8 +86,8 @@ class Gene_data:
                 line_left = line_left[:left]
             
             gene = Gene_data(id,label)
-            gene.seqleft = line_left.rstrip().upper()
-            gene.seqright = line_right.rstrip().upper()
+            gene.seqleft = line_left.rstrip()
+            gene.seqright = line_right.rstrip()
             gene.length = seq_length
             genes.append(gene)
         
