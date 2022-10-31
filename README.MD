@@ -4,8 +4,17 @@ DM3Loc is a novel Deep-learning framework with multi-head self-attention for mul
 
 ##### Installation
 
-  - Installation has been tested in Ubuntu 16.04.5 LST and Mac OS HighSierra with python 3.5.2: 
-You can install the dependent packages by the following commands:
+   - Installation has been tested in Ubuntu 16.04.5 LST and Mac OS HighSierra with python 3.5.2 and python 3.7.13
+Installation with conda and pip.
+```
+conda deactivate
+conda create --name dm3loc python=3.7.13
+conda activate dm3loc
+pip install dm3loc
+python -c "import DM3Loc; print(DM3Loc.__file__)"
+#The DM3Loc will be installed in the above folder which contains the __init__.py. 
+
+You can also install the dependent packages by the following commands:
     ```sh
     sudo apt-get install -y python3.5 python3-pip
     python3 -m pip install numpy 
