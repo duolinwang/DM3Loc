@@ -13,7 +13,7 @@ conda activate dm3loc
 pip install dm3loc
 python -c "import DM3Loc; print(DM3Loc.__file__)"
 #The DM3Loc will be installed in the above folder which contains the __init__.py. 
-
+ ```
 You can also install the dependent packages by the following commands:
     ```sh
     sudo apt-get install -y python3.5 python3-pip
